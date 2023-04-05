@@ -97,10 +97,10 @@ int main(int argc, char **argv)
     // Main loop
         cv::Mat imRGB, imD;
         cv::Mat imRGBOut, imDOut,maskOut;
+    cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
     for(int ni=0; ni<nImages; ni++)
     {
         // Read image and depthmap from file
-        cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
         imRGB = cv::imread(string(argv[3])+"/"+vstrImageFilenamesRGB[ni],CV_LOAD_IMAGE_UNCHANGED);
         imD = cv::imread(string(argv[3])+"/"+vstrImageFilenamesD[ni],CV_LOAD_IMAGE_UNCHANGED);
 
@@ -118,14 +118,33 @@ int main(int argc, char **argv)
 #else
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
-
-        if (argc == 6 || argc == 7)
+        // Segment out the images
+        //test1 间隔固定帧看效果
+        // if(ni % 5 == 0)
+        // {
+        //     cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
+        //     if (argc == 6 || argc == 7)
+        //     {
+        //         cv::Mat maskRCNN;
+        //         maskRCNN = MaskNet->GetSegmentation(imRGB,string(argv[5]),vstrImageFilenamesRGB[ni].replace(0,4,""));
+        //         cv::Mat maskRCNNdil = maskRCNN.clone();
+        //         cv::dilate(maskRCNN,maskRCNNdil, kernel);
+        //         mask = mask - maskRCNNdil;
+        //     }
+        // }
+        //test2 使用关键帧看效果
+        if(ni == 0 || SLAM.CurrentFrameIsKeyFrame() == true)
         {
-            cv::Mat maskRCNN;
-            maskRCNN = MaskNet->GetSegmentation(imRGB,string(argv[5]),vstrImageFilenamesRGB[ni].replace(0,4,""));
-            cv::Mat maskRCNNdil = maskRCNN.clone();
-            cv::dilate(maskRCNN,maskRCNNdil, kernel);
-            mask = mask - maskRCNNdil;
+            std::cout << "this is keyframe" << std::endl;
+            if (argc == 6 || argc == 7)
+            {
+                cv::Mat maskRCNN;
+                maskRCNN = MaskNet->GetSegmentation(imRGB,string(argv[5]),vstrImageFilenamesRGB[ni].replace(0,4,""));
+                cv::Mat maskRCNNdil = maskRCNN.clone();
+                cv::dilate(maskRCNN,maskRCNNdil, kernel);
+                mask.setTo(1);
+                mask = mask - maskRCNNdil;
+            }
         }
         // Pass the image to the SLAM system
         if (argc == 7){SLAM.TrackRGBD(imRGB,imD,mask,tframe,imRGBOut,imDOut,maskOut);}
