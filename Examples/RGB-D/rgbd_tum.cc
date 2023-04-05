@@ -120,22 +120,9 @@ int main(int argc, char **argv)
 #endif
         // Segment out the images
         //test1 间隔固定帧看效果
-        // if(ni % 5 == 0)
-        // {
-        //     cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
-        //     if (argc == 6 || argc == 7)
-        //     {
-        //         cv::Mat maskRCNN;
-        //         maskRCNN = MaskNet->GetSegmentation(imRGB,string(argv[5]),vstrImageFilenamesRGB[ni].replace(0,4,""));
-        //         cv::Mat maskRCNNdil = maskRCNN.clone();
-        //         cv::dilate(maskRCNN,maskRCNNdil, kernel);
-        //         mask = mask - maskRCNNdil;
-        //     }
-        // }
-        //test2 使用关键帧看效果
-        if(ni == 0 || SLAM.CurrentFrameIsKeyFrame() == true)
+        if(ni % 5 == 0)
         {
-            std::cout << "this is keyframe" << std::endl;
+            std::cout << "this is " << ni << " frame" << std::endl;
             if (argc == 6 || argc == 7)
             {
                 cv::Mat maskRCNN;
@@ -146,8 +133,22 @@ int main(int argc, char **argv)
                 mask = mask - maskRCNNdil;
             }
         }
+        //test2 使用关键帧看效果
+        // if(ni == 0 || SLAM.CurrentFrameIsKeyFrame() == true)
+        // {
+        //     std::cout << "this is keyframe" << std::endl;
+        //     if (argc == 6 || argc == 7)
+        //     {
+        //         cv::Mat maskRCNN;
+        //         maskRCNN = MaskNet->GetSegmentation(imRGB,string(argv[5]),vstrImageFilenamesRGB[ni].replace(0,4,""));
+        //         cv::Mat maskRCNNdil = maskRCNN.clone();
+        //         cv::dilate(maskRCNN,maskRCNNdil, kernel);
+        //         mask.setTo(1);
+        //         mask = mask - maskRCNNdil;
+        //     }
+        // }
         // Pass the image to the SLAM system
-        if (argc == 7){SLAM.TrackRGBD(imRGB,imD,mask,tframe,imRGBOut,imDOut,maskOut);}
+        if (argc == 5){SLAM.TrackRGBD(imRGB,imD,mask,tframe,imRGBOut,imDOut,maskOut);}
         else {SLAM.TrackRGBD(imRGB,imD,mask,tframe);}
 
 #ifdef COMPILEDWITHC11
