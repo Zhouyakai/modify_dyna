@@ -66,6 +66,11 @@ public:
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, cv::Mat &mask, const double &timestamp);
+    //for YOLOV5
+    cv::Mat TrackRGBD(const cv::Mat &im,                //彩色图像
+                      const cv::Mat &depthmap,          //深度图像
+                      const double &timestamp,
+                      const vector<std::pair<vector<double>, int>>& detect_result);         //时间戳
 
 
     // Proccess the given monocular frame

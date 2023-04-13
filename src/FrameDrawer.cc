@@ -35,7 +35,7 @@ FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 }
 
-cv::Mat FrameDrawer::DrawFrame()
+cv::Mat FrameDrawer::DrawFrame(Tracking *pTracker)
 {
     cv::Mat im;
     vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
@@ -102,19 +102,49 @@ cv::Mat FrameDrawer::DrawFrame()
                 pt2.x=vCurrentKeys[i].pt.x+r;
                 pt2.y=vCurrentKeys[i].pt.y+r;
 
-                // This is a match to a MapPoint in the map
-                if(vbMap[i])
-                {
-                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
-                    cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(0,255,0),-1);
+                //for yolov5
+                for(int k=0; k<objects_curFD.size(); ++k){
+                    // cout << "k is " << k << endl;
+                    if (objects_curFD[k]->ndetect_class == 3 ){
+                        cv::Point pt11,pt22;
+                        pt11 = cv::Point(objects_curFD[k]->vdetect_parameter[0],objects_curFD[k]->vdetect_parameter[1]);
+                        pt22 = cv::Point(objects_curFD[k]->vdetect_parameter[2],objects_curFD[k]->vdetect_parameter[3]);
+                        cv::rectangle(im,pt11,pt22,cv::Scalar(0,200,200));
+                    }
+
+                    if (objects_curFD[k]->ndetect_class == 1 ){
+                        cv::Point pt11,pt22;
+                        pt11 = cv::Point(objects_curFD[k]->vdetect_parameter[0],objects_curFD[k]->vdetect_parameter[1]);
+                        pt22 = cv::Point(objects_curFD[k]->vdetect_parameter[2],objects_curFD[k]->vdetect_parameter[3]);
+                        cv::rectangle(im,pt11,pt22,cv::Scalar(200,0,100));
+                    }
+                
+                }
+                if(vbInDynamic_mvKeys[i]){//把位于动态物体框内的特征点标红
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,0,200));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,0,200),-1);
                     mnTracked++;
                 }
-                else // This is match to a "visual odometry" MapPoint created in the last frame
-                {
-                    cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
-                    cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(255,0,0),-1);
-                    mnTrackedVO++;
+                else{
+                    cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
+                    cv::circle(im,vCurrentKeys[i].pt,1,cv::Scalar(0,255,0),-1);
+                    mnTracked++;
                 }
+
+                //for dynaslam
+                // // This is a match to a MapPoint in the map
+                // if(vbMap[i])
+                // {
+                //     cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
+                //     cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(0,255,0),-1);
+                //     mnTracked++;
+                // }
+                // else // This is match to a "visual odometry" MapPoint created in the last frame
+                // {
+                //     cv::rectangle(im,pt1,pt2,cv::Scalar(255,0,0));
+                //     cv::circle(im,vCurrentKeys[i].pt,2,cv::Scalar(255,0,0),-1);
+                //     mnTrackedVO++;
+                // }
             }
         }
     }
@@ -173,6 +203,11 @@ void FrameDrawer::Update(Tracking *pTracker)
     mvbVO = vector<bool>(N,false);
     mvbMap = vector<bool>(N,false);
     mbOnlyTracking = pTracker->mbOnlyTracking;
+
+    //*****jy
+    objects_curFD = pTracker->mCurrentFrame.objects_cur_;
+    vbInDynamic_mvKeys = pTracker->mCurrentFrame.vbInDynamic_mvKeys;    
+    //*****
 
 
     if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)

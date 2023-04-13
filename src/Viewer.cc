@@ -123,7 +123,7 @@ void Viewer::Run()
 
         pangolin::FinishFrame();
 
-        cv::Mat im = mpFrameDrawer->DrawFrame();
+        cv::Mat im = mpFrameDrawer->DrawFrame(mpTracker);
         if(!im.empty())
         {
            cv::imshow("DynaSLAM: Current Frame",im);

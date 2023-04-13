@@ -51,6 +51,10 @@ public:
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const cv::Mat &maskLeft, const cv::Mat &maskRight, const double &timestamp);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, cv::Mat &mask, const double &timestamp, cv::Mat &imRGBOut, cv::Mat &imDOut, cv::Mat &maskOut);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, cv::Mat &mask, const double &timestamp);
+    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,
+                            const cv::Mat &imD, 
+                            const double &timestamp,
+                            const vector<std::pair<vector<double>, int>>& detect_result);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const cv::Mat &mask, const double &timestamp);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);

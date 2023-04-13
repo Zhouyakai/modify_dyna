@@ -111,6 +111,7 @@ src/Viewer.cc
 src/Conversion.cc
 src/MaskNet.cc
 src/Geometry.cc
+src/Object.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

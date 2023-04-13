@@ -257,6 +257,65 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, cv::Mat &m
     return Tcw;
 }
 
+//当输入图像 为RGBD时进行的追踪，参数就不在一一说明了
+cv::Mat System::TrackRGBD(const cv::Mat &im, 
+                        const cv::Mat &depthmap, 
+                        const double &timestamp,
+                        const vector<std::pair<vector<double>, int>>& detect_result)
+{
+	//判断输入数据类型是否合法
+    if(mSensor!=RGBD)
+    {
+        cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
+        exit(-1);
+    }    
+
+    // Check mode change
+    //检查模式改变
+    {
+        unique_lock<mutex> lock(mMutexMode);
+        if(mbActivateLocalizationMode)
+        {
+            mpLocalMapper->RequestStop();
+
+            // Wait until Local Mapping has effectively stopped
+            while(!mpLocalMapper->isStopped())
+            {
+                usleep(1000);
+            }
+
+            mpTracker->InformOnlyTracking(true);
+            mbActivateLocalizationMode = false;
+        }
+        if(mbDeactivateLocalizationMode)
+        {
+            mpTracker->InformOnlyTracking(false);
+            mpLocalMapper->Release();
+            mbDeactivateLocalizationMode = false;
+        }
+    }
+
+    // Check reset
+    //检查是否有复位请求
+    {
+    unique_lock<mutex> lock(mMutexReset);
+    if(mbReset)
+    {
+        mpTracker->Reset();
+        mbReset = false;
+    }
+    }
+
+    //获得相机位姿的估计
+    cv::Mat Tcw = mpTracker->GrabImageRGBD(im,depthmap,timestamp,detect_result);
+
+    unique_lock<mutex> lock2(mMutexState);
+    mTrackingState = mpTracker->mState;
+    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    return Tcw;
+}
+
 cv::Mat System::TrackMonocular(const cv::Mat &im, const cv::Mat &mask, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)

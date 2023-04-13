@@ -301,6 +301,71 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, cv::Mat
     return mCurrentFrame.mTcw.clone();
 }
 
+cv::Mat Tracking::GrabImageRGBD(
+    const cv::Mat &imRGB,           //彩色图像
+    const cv::Mat &imD,             //深度图像
+    const double &timestamp,
+    const vector<std::pair<vector<double>, int>>& detect_result)        //时间戳
+{
+    mImGray = imRGB;
+    cv::Mat imDepth = imD;
+
+    // step 1：将RGB或RGBA图像转为灰度图像
+    if(mImGray.channels()==3)
+    {
+        if(mbRGB)
+            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+        else
+            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+    }
+    else if(mImGray.channels()==4)
+    {
+        if(mbRGB)
+            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+        else
+            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+    }
+
+    // step 2 ：将深度相机的disparity转为Depth , 也就是转换成为真正尺度下的深度
+    //这里的判断条件感觉有些尴尬
+    //前者和后者满足一个就可以了
+    //满足前者意味着,mDepthMapFactor 相对1来讲要足够大
+    //满足后者意味着,如果深度图像不是浮点型? 才会执行
+    //意思就是说,如果读取到的深度图像是浮点型,就不执行这个尺度的变换操作了呗? TODO 
+    if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
+        imDepth.convertTo(  //将图像转换成为另外一种数据类型,具有可选的数据大小缩放系数
+            imDepth,            //输出图像
+            CV_32F,             //输出图像的数据类型
+            mDepthMapFactor);   //缩放系数
+
+    // 步骤3：构造Frame
+    mCurrentFrame = Frame(
+        mImGray,                //灰度图像
+        imDepth,                //深度图像
+        timestamp,              //时间戳
+        mpORBextractorLeft,     //ORB特征提取器
+        mpORBVocabulary,        //词典
+        mK,                     //相机内参矩阵
+        mDistCoef,              //相机的去畸变参数
+        mbf,                    //相机基线*相机焦距
+        mThDepth,
+        detect_result);              //内外点区分深度阈值
+
+    // for (int k=0; k<mCurrentFrame.objects_cur_.size(); ++k){
+    //     if(mCurrentFrame.objects_cur_[k]->ndetect_class == 3){
+    //         vector <double> box = mCurrentFrame.objects_cur_[k]->vdetect_parameter;
+    //         cout << box[0] << " " << box[1] << " " << box[2] << " " << box[3] << endl;
+    //     }
+    // }
+    // sleep(1);
+
+    // 步骤4：跟踪
+    Track();
+
+    //返回当前帧的位姿
+    return mCurrentFrame.mTcw.clone();
+}
+
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const cv::Mat &mask, const double &timestamp)
 {
     mImGray = im;

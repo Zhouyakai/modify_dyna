@@ -20,6 +20,8 @@
 #include "ORBextractor.h"
 
 #include <opencv2/opencv.hpp>
+#include "Object.h"
+
 
 namespace ORB_SLAM2
 {
@@ -28,6 +30,8 @@ namespace ORB_SLAM2
 
 class MapPoint;
 class KeyFrame;
+class Object;
+
 
 class Frame
 {
@@ -45,6 +49,17 @@ public:
 
     // Constructor for RGB-D cameras.
     Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const cv::Mat &imMask, const cv::Mat &imRGB, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
+    Frame(const cv::Mat &imGray, 
+            const cv::Mat &imDepth, 
+            const long double &timeStamp, 
+            ORBextractor* extractor,
+            ORBVocabulary* voc, 
+            cv::Mat &K, 
+            cv::Mat &distCoef, 
+            const float &bf, 
+            const float &thDepth,
+            const vector<std::pair<vector<double>, int>>& detect_result);
 
     // Constructor for Monocular cameras.
     Frame(const cv::Mat &imGray, const cv::Mat &mask, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
@@ -89,6 +104,13 @@ public:
 
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
     cv::Mat UnprojectStereo(const int &i);
+
+    //*************yolov5
+    //判断特征点是否在物体框内
+    bool IsInBox(const int& i, int& box_id);
+    //判断特征点是否在动态物体(人)内
+    bool IsInDynamic(const int& i);
+    bool IsInStatic(const int& i);
 
 public:
     // Vocabulary used for relocalization.
@@ -177,6 +199,25 @@ public:
     vector<float> mvInvScaleFactors;
     vector<float> mvLevelSigma2;
     vector<float> mvInvLevelSigma2;
+    
+    //*******yolov5
+    // vector<std::shared_ptr<Object>> objects_cur_detect_;//用于光流的物体
+    vector<Object*> objects_cur_;//存储帧中的object 
+    map<int, int> matches_out_box; //在物体框外的匹配点
+
+    map<int, std::pair<int, int>> matches_in_box;//在bounding_box框内的匹配
+                                                //CurrentFrame.matches_in_box.emplace(bestIdx2, make_pair(i, box_id));
+                                                //bestIdx2是当前帧的候选匹配点中的最佳匹配特征点的序列,i是前一帧的序列,boxid是所在物体的序列
+    vector<vector<int> > points_in_box;//框内的特征点.内vector储存一系列点,外vector代表一系列物体
+    map<int, std::pair<int, int>> matches_in_dynamic;
+
+    vector<bool> vbInDynamic_mvKeys;//位于动态物体区域内的特征点(未做动态检验)
+    // vector<bool> vbInStatic_mvKeys;
+    std::vector<cv::KeyPoint> mvKeys_after;
+    
+    // vector<int> vInStatic_mvKeysUn;
+
+    //*******
 
     // Undistorted Image Bounds (computed once).
     static float mnMinX;

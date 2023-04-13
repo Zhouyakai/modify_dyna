@@ -24,6 +24,8 @@
 #include "Tracking.h"
 #include "MapPoint.h"
 #include "Map.h"
+#include "Object.h"
+
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
@@ -46,11 +48,17 @@ public:
     void Update(Tracking *pTracker);
 
     // Draw last processed frame.
-    cv::Mat DrawFrame();
+    cv::Mat DrawFrame(Tracking *pTracker);
 
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
+
+    //**********for yolov5
+    map<int, std::pair<int, int>> matches_in_box;
+    vector<Object*> objects_curFD;
+    vector<bool> vbInDynamic_mvKeys;//位于动态物体区域内的特征点(未做动态检验)
+    //***********
 
     // Info of the frame to be drawn
     cv::Mat mIm;
