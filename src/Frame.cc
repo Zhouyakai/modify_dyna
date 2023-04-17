@@ -946,6 +946,8 @@ void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
         const float &v = kp.pt.y;
         const float &u = kp.pt.x;
 
+        if(v<0 || u<0)//for yolov5
+            continue;
         const float d = imDepth.at<float>(v,u);
 
         if(d>0)

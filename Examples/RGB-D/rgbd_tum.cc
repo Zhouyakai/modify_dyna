@@ -56,8 +56,6 @@ int main(int argc, char **argv)
 	int len;
 	struct sockaddr_un address;
 	int result;
-	int i,byte;
-	char send_buf[128],ch_recv[1024];
  
 	if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0))==-1)//创建socket，指定通信协议为AF_UNIX,数据方式SOCK_STREAM
 	{
@@ -386,33 +384,36 @@ void MakeDetect_result(vector<std::pair<vector<double>, int>>& detect_result , i
 
 	std::pair<vector<double>, int> detect_result_str;
     int byte;
-	char send_buf[128],ch_recv[1024];
+	char send_buf[50],ch_recv[1024];
 
-    sprintf(send_buf,"ok");//用sprintf事先把消息写到send_buf
-	if((byte=write(sockfd, send_buf, sizeof(send_buf)))==-1)
+    memset(send_buf, 0, sizeof(send_buf)); // clear char[]
+    memset(ch_recv, 0, sizeof(ch_recv));   // clear char[]
+
+    sprintf(send_buf, "ok"); // 用sprintf事先把消息写到send_buf
+    if ((byte = write(sockfd, send_buf, sizeof(send_buf))) == -1)
     {
-		perror("write");
-		exit(EXIT_FAILURE);
-	}
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
 
-    if((byte=read(sockfd,&ch_recv,1000))==-1)
-	{
-		perror("read");
-		exit(EXIT_FAILURE);
-	}
-    // cout << "**ch_recv is : \n" << ch_recv << endl;
+    if ((byte = read(sockfd, &ch_recv, 1024)) == -1)
+    {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+    //printf("In C++: %s",ch_recv);
+    // cout << ch_recv
+    //cout << "********new*********" << endl;
+    string ch_recv_string = ch_recv;
+    cout << ch_recv_string << endl;
 
     char *ptr;//char[]可读可写,可以修改字符串的内容。char*可读不可写，写入就会导致段错误
     ptr = strtok(ch_recv, "*");//字符串分割函数
     while(ptr != NULL){
         printf("ptr=%s\n",ptr);
-
-        if ( strlen(ptr)>20 ){//试图去除乱码,乱码原因未知...好像并不能去除,留着吧,心理安慰下
-            // cout << strlen(ptr) << endl;
-            string ptr_str = ptr;
-            LoadBoundingBoxFromPython(ptr_str,detect_result_str);
-        } 
-
+        string ptr_str = ptr;
+        LoadBoundingBoxFromPython(ptr_str,detect_result_str);
+        
         detect_result.emplace_back(detect_result_str);
         // cout << "hh: " << ptr_str << endl;  
         ptr = strtok(NULL, "*");
